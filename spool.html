@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spool Wire Calculator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    margin: 0;
+    padding: 20px 16px 60px 16px;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 500px;
+    background: white;
+    padding: 20px 18px;
+    border-radius: 14px;
+    margin: 0 auto;
+}
+
+h2 {
+    text-align: center;
+    font-size: 22px;
+    margin: 4px 0 20px 0;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 20px;
+    font-size: 16px;
+}
+
+input {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    margin-top: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    -webkit-appearance: none;
+}
+
+input:focus {
+    outline: none;
+    border-color: #4a90d9;
+    border-width: 2px;
+    padding: 13px;
+}
+
+/* Label boxes for photo reference (Rolling Line / Test #) */
+.tagSection {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.tagBox {
+    flex: 1;
+}
+
+.tagBox label {
+    margin-top: 0;
+    font-size: 14px;
+}
+
+.tagBox input {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    padding: 12px 8px;
+}
+
+hr.sectionDivider {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 18px 0 6px 0;
+}
+
+/* Compact side-by-side rows for spool weights */
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    gap: 12px;
+}
+
+.row label {
+    margin-top: 0;
+    flex: 1;
+    font-size: 15px;
+}
+
+.row input {
+    width: 100px;
+    flex: none;
+    margin-top: 0;
+    padding: 10px;
+    text-align: right;
+}
+
+.output {
+    margin-top: 18px;
+    padding: 14px;
+    background: #eee;
+    border-radius: 8px;
+    font-size: 17px;
+}
+
+.result {
+    font-weight: bold;
+    display: block;
+    font-size: 24px;
+    margin-top: 4px;
+}
+
+.result.positive {
+    color: #1a7a1a;
+}
+
+.result.negative {
+    color: #c0392b;
+}
+
+.warning {
+    margin-top: 8px;
+    color: #c0392b;
+    font-size: 14px;
+    font-weight: bold;
+    display: none;
+}
+
+#clearBtn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    background: #eee;
+    color: #555;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+#clearBtn:active {
+    background: #ddd;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Spool Wire Calculator</h2>
+
+<div class="tagSection">
+    <div class="tagBox">
+        <label>Rolling Line</label>
+        <input type="text" id="rollingLine">
+    </div>
+    <div class="tagBox">
+        <label>Test #</label>
+        <input type="text" id="testNumber">
+    </div>
+</div>
+
+<hr class="sectionDivider">
+
+<div class="row">
+    <label>Empty Weight of Spool (lb)</label>
+    <input type="number" inputmode="decimal" id="emptySpool" step="any" min="0">
+</div>
+
+<div class="row">
+    <label>Full Spool Weight (lb)</label>
+    <input type="number" inputmode="decimal" id="fullSpool" step="any" min="0">
+</div>
+
+<div class="output">
+Wire Weight
+<span class="result" id="wireWeight">-- lb</span>
+</div>
+<div class="warning" id="weightWarning">Full spool weight should be greater than empty spool weight.</div>
+
+<label>Weight of 1 Ft of Wire (lb/ft)</label>
+<input type="number" inputmode="decimal" id="wirePerFoot" step="any" min="0">
+
+<label>Wire Size</label>
+<input type="number" inputmode="decimal" id="wireSize" step="any" min="0">
+
+<div class="output">
+Total Footage
+<span class="result" id="totalFootage">-- ft</span>
+</div>
+
+<div class="output">
+Target Footage
+<span class="result" id="targetFootage">-- ft</span>
+</div>
+
+<div class="output">
+Footage Over
+<span class="result" id="footageOver">-- ft</span>
+</div>
+
+<button id="clearBtn" type="button">Clear</button>
+
+</div>
+
+<script>
+
+function formatNum(n) {
+    return n.toLocaleString(undefined, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+    });
+}
+
+function calculate() {
+
+    let empty = parseFloat(document.getElementById("emptySpool").value);
+    let full = parseFloat(document.getElementById("fullSpool").value);
+    let weightPerFoot = parseFloat(document.getElementById("wirePerFoot").value);
+    let wireSize = parseFloat(document.getElementById("wireSize").value);
+
+    let wireWeightEl = document.getElementById("wireWeight");
+    let totalFootageEl = document.getElementById("totalFootage");
+    let targetFootageEl = document.getElementById("targetFootage");
+    let footageOverEl = document.getElementById("footageOver");
+    let warningEl = document.getElementById("weightWarning");
+
+    wireWeightEl.classList.remove("positive", "negative");
+    footageOverEl.classList.remove("positive", "negative");
+    warningEl.style.display = "none";
+
+    let targetFootage = NaN;
+    if (!isNaN(wireSize) && wireSize > 0) {
+        let sizeDecimal = wireSize / 100;
+        let denominator = sizeDecimal * 3.4;
+        targetFootage = 6000 / denominator;
+        targetFootageEl.innerHTML = formatNum(targetFootage) + " ft";
+    } else {
+        targetFootageEl.innerHTML = "-- ft";
+    }
+
+    if (!isNaN(empty) && !isNaN(full)) {
+
+        let wireWeight = full - empty;
+
+        wireWeightEl.innerHTML = formatNum(wireWeight) + " lb";
+
+        if (wireWeight < 0) {
+            wireWeightEl.classList.add("negative");
+            warningEl.style.display = "block";
+        }
+
+        if (!isNaN(weightPerFoot) && weightPerFoot > 0) {
+
+            let totalFootage = wireWeight / weightPerFoot;
+
+            totalFootageEl.innerHTML = formatNum(totalFootage) + " ft";
+
+            if (!isNaN(targetFootage)) {
+                let footageOver = totalFootage - targetFootage;
+                footageOverEl.innerHTML = formatNum(footageOver) + " ft";
+                footageOverEl.classList.add(footageOver >= 0 ? "positive" : "negative");
+            } else {
+                footageOverEl.innerHTML = "-- ft";
+            }
+
+        } else {
+            totalFootageEl.innerHTML = "-- ft";
+            footageOverEl.innerHTML = "-- ft";
+        }
+
+    } else {
+        wireWeightEl.innerHTML = "-- lb";
+        totalFootageEl.innerHTML = "-- ft";
+        footageOverEl.innerHTML = "-- ft";
+    }
+
+}
+
+var fields = ["emptySpool", "fullSpool", "wirePerFoot", "wireSize"];
+
+fields.forEach(function(id) {
+    var el = document.getElementById(id);
+    el.addEventListener("input", calculate);
+    el.addEventListener("change", calculate);
+    el.addEventListener("keyup", calculate);
+});
+
+calculate();
+
+document.getElementById("clearBtn").addEventListener("click", function() {
+    fields.forEach(function(id) {
+        document.getElementById(id).value = "";
+    });
+    document.getElementById("rollingLine").value = "";
+    document.getElementById("testNumber").value = "";
+    calculate();
+});
+
+</script>
+
+</body>
+</html>
